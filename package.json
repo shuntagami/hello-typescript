@@ -16,5 +16,8 @@
     "@types/node": "^18.11.18",
     "esbuild": "^0.16.12",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0"
   }
 }
