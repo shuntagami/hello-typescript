@@ -1,8 +1,13 @@
 import ExcelJS from "exceljs";
 
+const now = new Date();
+const dateStr = now.toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD形式
+const timeStr = now.toISOString().slice(11, 19).replace(/:/g, ""); // HHMMSS形式
+const fileName = `${dateStr}_${timeStr}.xlsx`;
+
 async function createTemplateStructure(): Promise<void> {
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("Template");
+  const worksheet = workbook.addWorksheet("checklist");
 
   // サンプルデータ
   const checklistHeaders = [
@@ -86,13 +91,13 @@ async function createTemplateStructure(): Promise<void> {
   worksheet.getCell("A3").value = "#{blueprints.image}";
 
   // ファイルとして保存
-  await workbook.xlsx.writeFile("result.xlsx");
+  await workbook.xlsx.writeFile(fileName);
 }
 
 // 関数を実行
 createTemplateStructure()
   .then(() => {
-    console.log("Template structure has been created successfully!");
+    console.log(`${fileName}`);
   })
   .catch((error) => {
     console.error("Error creating template structure:", error);
