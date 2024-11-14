@@ -34,12 +34,6 @@ async function createTemplateStructure(
   // 図面エリアのマージセル
   worksheet.mergeCells("A3:H32");
 
-  // 固定ヘッダーのセル設定
-  worksheet.getCell("I1").value = "番号";
-  worksheet.getCell("J1").value = "符号";
-  worksheet.mergeCells("I1:I8");
-  worksheet.mergeCells("J1:J8");
-
   // 固定ヘッダーのセル設定（縦書き）
   const setVerticalText = (cell: ExcelJS.Cell) => {
     cell.alignment = {
@@ -48,6 +42,23 @@ async function createTemplateStructure(
       textRotation: "vertical",
     };
   };
+
+  const setTextCenter = (cell: ExcelJS.Cell) => {
+    cell.alignment = {
+      vertical: "middle",
+      horizontal: "center",
+    };
+  };
+
+  // 固定ヘッダーのセル設定
+  const idCell = worksheet.getCell("I1");
+  const symbolCell = worksheet.getCell("J1");
+  setTextCenter(idCell);
+  setTextCenter(symbolCell);
+  worksheet.getCell("I1").value = "番号";
+  worksheet.getCell("J1").value = "符号";
+  worksheet.mergeCells("I1:I8");
+  worksheet.mergeCells("J1:J8");
 
   // チェックリストヘッダーの動的設定
   let currentColumn = "K".charCodeAt(0);
@@ -59,7 +70,9 @@ async function createTemplateStructure(
     if (header.items.length > 0) {
       worksheet.mergeCells(`${startCol}1:${endCol}1`);
     }
-    worksheet.getCell(`${startCol}1`).value = header.title;
+    const titleCell = worksheet.getCell(`${startCol}1`);
+    titleCell.value = header.title;
+    setTextCenter(titleCell);
 
     // 項目名の設定
     header.items.forEach((item, index) => {
