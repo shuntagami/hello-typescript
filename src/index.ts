@@ -31,10 +31,10 @@ async function createTemplateStructure(): Promise<void> {
   worksheet.mergeCells("A3:H32");
 
   // 固定ヘッダーのセル設定
-  worksheet.getCell("I1").value = "番";
-  worksheet.getCell("J1").value = "符";
-  worksheet.mergeCells("I1:I2");
-  worksheet.mergeCells("J1:J2");
+  worksheet.getCell("I1").value = "番号";
+  worksheet.getCell("J1").value = "符号";
+  worksheet.mergeCells("I1:I8");
+  worksheet.mergeCells("J1:J8");
 
   // チェックリストヘッダーの設定
   let currentColumn = "K";
@@ -53,6 +53,7 @@ async function createTemplateStructure(): Promise<void> {
     // 項目名の設定
     header.items.forEach((item, index) => {
       const col = String.fromCharCode(startCol.charCodeAt(0) + index);
+      worksheet.mergeCells(`${col}2:${col}8`);
       worksheet.getCell(`${col}2`).value = item;
     });
 
@@ -72,18 +73,6 @@ async function createTemplateStructure(): Promise<void> {
   worksheet.getCell("A2").value = "検査員 #{sheet_inspectors.names}";
   worksheet.getCell("D2").value = "#{blueprints.name:sheets.name}";
   worksheet.getCell("A3").value = "#{blueprints.image}";
-
-  // サンプルデータの行を追加
-  const sampleData = [
-    { no: "1", symbol: "C1" },
-    { no: "2", symbol: "C2" },
-  ];
-
-  sampleData.forEach((data, index) => {
-    const rowNum = index + 3;
-    worksheet.getCell(`I${rowNum}`).value = data.no;
-    worksheet.getCell(`J${rowNum}`).value = data.symbol;
-  });
 
   // ファイルとして保存
   await workbook.xlsx.writeFile("template_with_headers.xlsx");
