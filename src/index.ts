@@ -1,25 +1,24 @@
 import ExcelJS from "exceljs";
 
-const now = new Date();
-const dateStr = now.toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD形式
-const timeStr = now.toISOString().slice(11, 19).replace(/:/g, ""); // HHMMSS形式
-const fileName = `${dateStr}_${timeStr}.xlsx`;
+interface ChecklistItem {
+  name: string;
+}
 
-async function createTemplateStructure(): Promise<void> {
+interface ChecklistHeader {
+  title: string;
+  items: ChecklistItem[];
+}
+
+const now = new Date();
+const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+const timeStr = now.toISOString().slice(11, 19).replace(/:/g, "");
+const fileName = `results/${dateStr}_${timeStr}.xlsx`;
+
+async function createTemplateStructure(
+  headers: ChecklistHeader[]
+): Promise<void> {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("checklist");
-
-  // サンプルデータ
-  const checklistHeaders = [
-    {
-      title: "主筋",
-      items: ["項目1", "項目2", "項目3"],
-    },
-    {
-      title: "帯筋",
-      items: ["項目A", "項目B"],
-    },
-  ];
 
   // 基本の列幅設定
   worksheet.getColumn("A").width = 10;
@@ -46,38 +45,37 @@ async function createTemplateStructure(): Promise<void> {
     cell.alignment = {
       vertical: "top",
       horizontal: "center",
-      textRotation: "vertical", // 255は文字を縦書きにする特別な値
+      textRotation: "vertical",
     };
   };
 
-  // チェックリストヘッダーの設定
-  let currentColumn = "K";
-  checklistHeaders.forEach((header) => {
-    const startCol = currentColumn;
-    const endCol = String.fromCharCode(
-      currentColumn.charCodeAt(0) + header.items.length - 1
-    );
+  // チェックリストヘッダーの動的設定
+  let currentColumn = "K".charCodeAt(0);
+  headers.forEach((header) => {
+    const startCol = String.fromCharCode(currentColumn);
+    const endCol = String.fromCharCode(currentColumn + header.items.length - 1);
 
-    // タイトル行のマージ
-    if (header.items.length > 1) {
+    // タイトル行のマージ（項目が1つ以上ある場合）
+    if (header.items.length > 0) {
       worksheet.mergeCells(`${startCol}1:${endCol}1`);
     }
     worksheet.getCell(`${startCol}1`).value = header.title;
 
     // 項目名の設定
     header.items.forEach((item, index) => {
-      const col = String.fromCharCode(startCol.charCodeAt(0) + index);
+      const col = String.fromCharCode(currentColumn + index);
       worksheet.mergeCells(`${col}2:${col}8`);
       const cell = worksheet.getCell(`${col}2`);
       setVerticalText(cell);
-      cell.value = item;
+      cell.value = item.name;
+      worksheet.getColumn(col).width = 8; // 各列の幅を設定
     });
 
-    currentColumn = String.fromCharCode(endCol.charCodeAt(0) + 1);
+    currentColumn += header.items.length;
   });
 
   // EOB と END の設定
-  const lastCol = String.fromCharCode(currentColumn.charCodeAt(0));
+  const lastCol = String.fromCharCode(currentColumn);
   for (let i = 3; i <= 31; i++) {
     worksheet.getCell(`${lastCol}${i}`).value = "EOB";
   }
@@ -94,8 +92,30 @@ async function createTemplateStructure(): Promise<void> {
   await workbook.xlsx.writeFile(fileName);
 }
 
+// テスト用のサンプルデータ
+const sampleHeaders: ChecklistHeader[] = [
+  {
+    title: "主筋",
+    items: [
+      { name: "項目1" },
+      { name: "項目2" },
+      { name: "項目3" },
+      { name: "項目4" },
+      { name: "項目5" },
+    ],
+  },
+  {
+    title: "帯筋",
+    items: [{ name: "項目A" }, { name: "項目B" }, { name: "項目C" }],
+  },
+  {
+    title: "継手",
+    items: [{ name: "確認1" }, { name: "確認2" }],
+  },
+];
+
 // 関数を実行
-createTemplateStructure()
+createTemplateStructure(sampleHeaders)
   .then(() => {
     console.log(`${fileName}`);
   })
