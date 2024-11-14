@@ -36,6 +36,15 @@ async function createTemplateStructure(): Promise<void> {
   worksheet.mergeCells("I1:I8");
   worksheet.mergeCells("J1:J8");
 
+  // 固定ヘッダーのセル設定（縦書き）
+  const setVerticalText = (cell: ExcelJS.Cell) => {
+    cell.alignment = {
+      vertical: "top",
+      horizontal: "center",
+      textRotation: "vertical", // 255は文字を縦書きにする特別な値
+    };
+  };
+
   // チェックリストヘッダーの設定
   let currentColumn = "K";
   checklistHeaders.forEach((header) => {
@@ -54,7 +63,9 @@ async function createTemplateStructure(): Promise<void> {
     header.items.forEach((item, index) => {
       const col = String.fromCharCode(startCol.charCodeAt(0) + index);
       worksheet.mergeCells(`${col}2:${col}8`);
-      worksheet.getCell(`${col}2`).value = item;
+      const cell = worksheet.getCell(`${col}2`);
+      setVerticalText(cell);
+      cell.value = item;
     });
 
     currentColumn = String.fromCharCode(endCol.charCodeAt(0) + 1);
@@ -75,7 +86,7 @@ async function createTemplateStructure(): Promise<void> {
   worksheet.getCell("A3").value = "#{blueprints.image}";
 
   // ファイルとして保存
-  await workbook.xlsx.writeFile("template_with_headers.xlsx");
+  await workbook.xlsx.writeFile("result.xlsx");
 }
 
 // 関数を実行
