@@ -76,10 +76,10 @@ async function createTemplateStructure(
 
   // EOB と END の設定
   const lastCol = String.fromCharCode(currentColumn);
-  for (let i = 3; i <= 31; i++) {
+  for (let i = 9; i <= 32; i++) {
     worksheet.getCell(`${lastCol}${i}`).value = "EOB";
   }
-  worksheet.getCell("A32").value = "END";
+  worksheet.getCell("A33").value = "END";
 
   // マーカー値の設定
   worksheet.getCell("A1").value = "#{orders.site_name}";
