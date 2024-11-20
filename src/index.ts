@@ -62,12 +62,25 @@ async function createTemplateStructure(
       horizontal: "center",
       textRotation: "vertical",
     };
+    cell.border = {
+      top: { style: "thin" },
+      left: { style: "thin" },
+      bottom: { style: "thin" },
+      right: { style: "thin" },
+    };
   };
 
   const setTextCenter = (cell: ExcelJS.Cell) => {
     cell.alignment = {
       vertical: "middle",
       horizontal: "center",
+    };
+    // 枠線設定を追加
+    cell.border = {
+      top: { style: "thin" },
+      left: { style: "thin" },
+      bottom: { style: "thin" },
+      right: { style: "thin" },
     };
   };
 
