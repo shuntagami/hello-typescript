@@ -28,7 +28,18 @@ async function createTemplateStructure(
     stream,
   };
   const workbook = new ExcelJS.stream.xlsx.WorkbookWriter(options);
-  const worksheet = workbook.addWorksheet("checklist");
+  const worksheet = workbook.addWorksheet("checklist", {
+    views: [{}],
+    pageSetup: {
+      paperSize: 8, // A3
+      orientation: "landscape",
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 1,
+      horizontalCentered: true,
+      verticalCentered: true,
+    },
+  });
 
   // 基本の列幅設定
   worksheet.getColumn("A").width = 10;
