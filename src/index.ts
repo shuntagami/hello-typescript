@@ -18,6 +18,33 @@ interface ConstructionPart {
   checklistTemplates: ChecklistTemplate[];
 }
 
+const setTextCenter = (cell: ExcelJS.Cell) => {
+  cell.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+  };
+  cell.border = {
+    top: { style: "thin" },
+    left: { style: "thin" },
+    bottom: { style: "thin" },
+    right: { style: "thin" },
+  };
+};
+
+const setVerticalText = (cell: ExcelJS.Cell) => {
+  cell.alignment = {
+    vertical: "top",
+    horizontal: "center",
+    textRotation: "vertical",
+  };
+  cell.border = {
+    top: { style: "thin" },
+    left: { style: "thin" },
+    bottom: { style: "thin" },
+    right: { style: "thin" },
+  };
+};
+
 async function createTemplateStructure(
   constructionPart: ConstructionPart,
   filePath: string
@@ -29,7 +56,7 @@ async function createTemplateStructure(
   };
   const workbook = new ExcelJS.stream.xlsx.WorkbookWriter(options);
   const worksheet = workbook.addWorksheet("checklist", {
-    views: [{}],
+    views: [{ state: "normal", style: "pageBreakPreview" }],
     pageSetup: {
       paperSize: 8, // A3
       orientation: "landscape",
@@ -43,56 +70,40 @@ async function createTemplateStructure(
 
   // 基本の列幅設定
   worksheet.getColumn("A").width = 10;
-  worksheet.getColumn("I").width = 5; // 番号列
-  worksheet.getColumn("J").width = 5; // 符号列
+  worksheet.getColumn("I").width = 5;
+  worksheet.getColumn("J").width = 5;
+
+  // 使用するセル範囲を事前に把握
+  const lastColumn =
+    "K".charCodeAt(0) +
+    constructionPart.checklistTemplates.reduce(
+      (sum, template) => sum + template.items.length,
+      0
+    ) -
+    1;
+
+  // 全セルに対してデフォルトスタイルを適用
+  for (let row = 1; row <= 32; row++) {
+    for (let col = "A".charCodeAt(0); col <= lastColumn; col++) {
+      const cell = worksheet.getCell(`${String.fromCharCode(col)}${row}`);
+      setTextCenter(cell);
+    }
+  }
 
   // ヘッダー部分のマージセル設定
-  worksheet.mergeCells("A1:C1"); // orders.site_name
-  worksheet.mergeCells("D1:H1"); // operation_categories.name
-  worksheet.mergeCells("A2:C2"); // 検査員
-  worksheet.mergeCells("D2:H2"); // blueprints.name:sheets.name
+  worksheet.mergeCells("A1:C1");
+  worksheet.mergeCells("D1:H1");
+  worksheet.mergeCells("A2:C2");
+  worksheet.mergeCells("D2:H2");
 
   // 図面エリアのマージセル
   worksheet.mergeCells("A3:H32");
 
-  // 固定ヘッダーのセル設定（縦書き）
-  const setVerticalText = (cell: ExcelJS.Cell) => {
-    cell.alignment = {
-      vertical: "top",
-      horizontal: "center",
-      textRotation: "vertical",
-    };
-    cell.border = {
-      top: { style: "thin" },
-      left: { style: "thin" },
-      bottom: { style: "thin" },
-      right: { style: "thin" },
-    };
-  };
-
-  const setTextCenter = (cell: ExcelJS.Cell) => {
-    cell.alignment = {
-      vertical: "middle",
-      horizontal: "center",
-    };
-    // 枠線設定を追加
-    cell.border = {
-      top: { style: "thin" },
-      left: { style: "thin" },
-      bottom: { style: "thin" },
-      right: { style: "thin" },
-    };
-  };
-
   // 固定ヘッダーのセル設定
-  const idCell = worksheet.getCell("I1");
-  const symbolCell = worksheet.getCell("J1");
-  setTextCenter(idCell);
-  setTextCenter(symbolCell);
-  worksheet.getCell("I1").value = "番号";
-  worksheet.getCell("J1").value = "符号";
   worksheet.mergeCells("I1:I8");
   worksheet.mergeCells("J1:J8");
+  worksheet.getCell("I1").value = "番号";
+  worksheet.getCell("J1").value = "符号";
 
   // チェックリストヘッダーの動的設定
   let currentColumn = "K".charCodeAt(0);
@@ -102,22 +113,19 @@ async function createTemplateStructure(
       currentColumn + template.items.length - 1
     );
 
-    // タイトル行のマージ（項目が1つ以上ある場合）
     if (template.items.length > 0) {
       worksheet.mergeCells(`${startCol}1:${endCol}1`);
     }
-    const titleCell = worksheet.getCell(`${startCol}1`);
-    titleCell.value = template.name;
-    setTextCenter(titleCell);
+    worksheet.getCell(`${startCol}1`).value = template.name;
 
-    // 項目名の設定
+    // 項目名の設定（ここだけ縦書き）
     template.items.forEach((item, index) => {
       const col = String.fromCharCode(currentColumn + index);
       worksheet.mergeCells(`${col}2:${col}8`);
       const cell = worksheet.getCell(`${col}2`);
       setVerticalText(cell);
       cell.value = item.name;
-      worksheet.getColumn(col).width = 8; // 各列の幅を設定
+      worksheet.getColumn(col).width = 8;
     });
 
     currentColumn += template.items.length;
