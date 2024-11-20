@@ -2,28 +2,32 @@ import ExcelJS from "exceljs";
 import { createWriteStream } from "fs";
 
 interface ChecklistItem {
+  id: number;
   name: string;
 }
 
-interface ChecklistHeader {
-  title: string;
+interface ChecklistTemplate {
+  id: number;
+  name: string;
   items: ChecklistItem[];
 }
 
-const now = new Date();
-const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
-const timeStr = now.toISOString().slice(11, 19).replace(/:/g, "");
-const fileName = `results/${dateStr}_${timeStr}.xlsx`;
+interface ConstructionPart {
+  id: number;
+  name: string;
+  checklistTemplates: ChecklistTemplate[];
+}
 
 async function createTemplateStructure(
-  headers: ChecklistHeader[]
+  constructionPart: ConstructionPart,
+  filePath: string
 ): Promise<void> {
-  const stream = createWriteStream(fileName);
+  const stream = createWriteStream(filePath);
   const options = {
     useStyles: true,
     stream,
-  }
-  const workbook = new ExcelJS.stream.xlsx.WorkbookWriter(options)
+  };
+  const workbook = new ExcelJS.stream.xlsx.WorkbookWriter(options);
   const worksheet = workbook.addWorksheet("checklist");
 
   // 基本の列幅設定
@@ -68,20 +72,22 @@ async function createTemplateStructure(
 
   // チェックリストヘッダーの動的設定
   let currentColumn = "K".charCodeAt(0);
-  headers.forEach((header) => {
+  constructionPart.checklistTemplates.forEach((template) => {
     const startCol = String.fromCharCode(currentColumn);
-    const endCol = String.fromCharCode(currentColumn + header.items.length - 1);
+    const endCol = String.fromCharCode(
+      currentColumn + template.items.length - 1
+    );
 
     // タイトル行のマージ（項目が1つ以上ある場合）
-    if (header.items.length > 0) {
+    if (template.items.length > 0) {
       worksheet.mergeCells(`${startCol}1:${endCol}1`);
     }
     const titleCell = worksheet.getCell(`${startCol}1`);
-    titleCell.value = header.title;
+    titleCell.value = template.name;
     setTextCenter(titleCell);
 
     // 項目名の設定
-    header.items.forEach((item, index) => {
+    template.items.forEach((item, index) => {
       const col = String.fromCharCode(currentColumn + index);
       worksheet.mergeCells(`${col}2:${col}8`);
       const cell = worksheet.getCell(`${col}2`);
@@ -90,7 +96,7 @@ async function createTemplateStructure(
       worksheet.getColumn(col).width = 8; // 各列の幅を設定
     });
 
-    currentColumn += header.items.length;
+    currentColumn += template.items.length;
   });
 
   // EOB と END の設定
@@ -111,31 +117,51 @@ async function createTemplateStructure(
 }
 
 // テスト用のサンプルデータ
-const sampleHeaders: ChecklistHeader[] = [
-  {
-    title: "主筋",
-    items: [
-      { name: "項目1" },
-      { name: "項目2" },
-      { name: "項目3" },
-      { name: "項目4" },
-      { name: "項目5" },
-    ],
-  },
-  {
-    title: "帯筋",
-    items: [{ name: "項目A" }, { name: "項目B" }, { name: "項目C" }],
-  },
-  {
-    title: "継手",
-    items: [{ name: "確認1" }, { name: "確認2" }],
-  },
-];
+const sampleConstructionPart: ConstructionPart = {
+  id: 1,
+  name: "基礎",
+  checklistTemplates: [
+    {
+      id: 1,
+      name: "主筋",
+      items: [
+        { id: 1, name: "項目1" },
+        { id: 2, name: "項目2" },
+        { id: 3, name: "項目3" },
+        { id: 4, name: "項目4" },
+        { id: 5, name: "項目5" },
+      ],
+    },
+    {
+      id: 2,
+      name: "帯筋",
+      items: [
+        { id: 6, name: "項目A" },
+        { id: 7, name: "項目B" },
+        { id: 8, name: "項目C" },
+      ],
+    },
+    {
+      id: 3,
+      name: "継手",
+      items: [
+        { id: 9, name: "確認1" },
+        { id: 10, name: "確認2" },
+        { id: 11, name: "確認3" },
+      ],
+    },
+  ],
+};
+
+const now = new Date();
+const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+const timeStr = now.toISOString().slice(11, 19).replace(/:/g, "");
+const filePath = `results/${dateStr}_${timeStr}.xlsx`;
 
 // 関数を実行
-createTemplateStructure(sampleHeaders)
+createTemplateStructure(sampleConstructionPart, filePath)
   .then(() => {
-    console.log(`${fileName}`);
+    console.log(`${filePath}`);
   })
   .catch((error) => {
     console.error("Error creating template structure:", error);
