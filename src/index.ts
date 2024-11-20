@@ -18,6 +18,15 @@ interface ConstructionPart {
   checklistTemplates: ChecklistTemplate[];
 }
 
+const getColumnLetter = (num: number): string => {
+  let letter = "";
+  while (num >= 0) {
+    letter = String.fromCharCode((num % 26) + 65) + letter;
+    num = Math.floor(num / 26) - 1;
+  }
+  return letter;
+};
+
 const setTextCenter = (cell: ExcelJS.Cell) => {
   cell.alignment = {
     vertical: "middle",
@@ -74,18 +83,16 @@ async function createTemplateStructure(
   worksheet.getColumn("J").width = 5;
 
   // 使用するセル範囲を事前に把握
-  const lastColumn =
-    "K".charCodeAt(0) +
-    constructionPart.checklistTemplates.reduce(
-      (sum, template) => sum + template.items.length,
-      0
-    ) -
-    1;
+  const lastColumnIndex = constructionPart.checklistTemplates.reduce(
+    (sum, template) => sum + template.items.length,
+    0
+  );
 
   // 全セルに対してデフォルトスタイルを適用
   for (let row = 1; row <= 32; row++) {
-    for (let col = "A".charCodeAt(0); col <= lastColumn; col++) {
-      const cell = worksheet.getCell(`${String.fromCharCode(col)}${row}`);
+    for (let colIndex = 0; colIndex < lastColumnIndex + 11; colIndex++) {
+      const colLetter = getColumnLetter(colIndex);
+      const cell = worksheet.getCell(`${colLetter}${row}`);
       setTextCenter(cell);
     }
   }
@@ -106,21 +113,22 @@ async function createTemplateStructure(
   worksheet.getCell("J1").value = "符号";
 
   // チェックリストヘッダーの動的設定
-  let currentColumn = "K".charCodeAt(0);
+  let currentColumnIndex = 10; // K列は10番目
   constructionPart.checklistTemplates.forEach((template) => {
-    const startCol = String.fromCharCode(currentColumn);
-    const endCol = String.fromCharCode(
-      currentColumn + template.items.length - 1
+    const startCol = getColumnLetter(currentColumnIndex);
+    const endCol = getColumnLetter(
+      currentColumnIndex + template.items.length - 1
     );
 
     if (template.items.length > 0) {
       worksheet.mergeCells(`${startCol}1:${endCol}1`);
     }
-    worksheet.getCell(`${startCol}1`).value = template.name;
+    const titleCell = worksheet.getCell(`${startCol}1`);
+    titleCell.value = template.name;
 
-    // 項目名の設定（ここだけ縦書き）
+    // 項目名の設定
     template.items.forEach((item, index) => {
-      const col = String.fromCharCode(currentColumn + index);
+      const col = getColumnLetter(currentColumnIndex + index);
       worksheet.mergeCells(`${col}2:${col}8`);
       const cell = worksheet.getCell(`${col}2`);
       setVerticalText(cell);
@@ -128,11 +136,11 @@ async function createTemplateStructure(
       worksheet.getColumn(col).width = 8;
     });
 
-    currentColumn += template.items.length;
+    currentColumnIndex += template.items.length;
   });
 
   // EOB と END の設定
-  const lastCol = String.fromCharCode(currentColumn);
+  const lastCol = getColumnLetter(currentColumnIndex);
   for (let i = 9; i <= 32; i++) {
     worksheet.getCell(`${lastCol}${i}`).value = "EOB";
   }
