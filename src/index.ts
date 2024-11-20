@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import { createWriteStream } from "fs";
 
 interface ChecklistItem {
   name: string;
@@ -17,7 +18,12 @@ const fileName = `results/${dateStr}_${timeStr}.xlsx`;
 async function createTemplateStructure(
   headers: ChecklistHeader[]
 ): Promise<void> {
-  const workbook = new ExcelJS.Workbook();
+  const stream = createWriteStream(fileName);
+  const options = {
+    useStyles: true,
+    stream,
+  }
+  const workbook = new ExcelJS.stream.xlsx.WorkbookWriter(options)
   const worksheet = workbook.addWorksheet("checklist");
 
   // 基本の列幅設定
@@ -101,8 +107,7 @@ async function createTemplateStructure(
   worksheet.getCell("D2").value = "#{blueprints.name:sheets.name}";
   worksheet.getCell("A3").value = "#{blueprints.image}";
 
-  // ファイルとして保存
-  await workbook.xlsx.writeFile(fileName);
+  await workbook.commit();
 }
 
 // テスト用のサンプルデータ
