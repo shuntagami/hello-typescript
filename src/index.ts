@@ -112,6 +112,12 @@ async function createTemplateStructure(
   worksheet.getCell("I1").value = "番号";
   worksheet.getCell("J1").value = "符号";
 
+  // 番号と符号の列にマーカーを設定（9行目から32行目まで）
+  for (let row = 9; row <= 32; row++) {
+    worksheet.getCell(`I${row}`).value = "#{record.sequence_id}";
+    worksheet.getCell(`J${row}`).value = "#{record.symbol}";
+  }
+
   // チェックリストヘッダーの動的設定
   let currentColumnIndex = 10; // K列は10番目
   constructionPart.checklistTemplates.forEach((template) => {
@@ -134,6 +140,12 @@ async function createTemplateStructure(
       setVerticalText(cell);
       cell.value = item.name;
       worksheet.getColumn(col).width = 8;
+
+      // 結果マーカーの設定（9行目から32行目まで）
+      for (let row = 9; row <= 32; row++) {
+        const resultCell = worksheet.getCell(`${col}${row}`);
+        resultCell.value = "#{item.result}";
+      }
     });
 
     currentColumnIndex += template.items.length;
